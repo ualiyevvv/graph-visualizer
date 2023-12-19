@@ -10,7 +10,7 @@ module.exports = {
 
     // Определяем куда складывать результат сборки
     output: {
-        filename: 'bundle.js', // Название выходного файла
+        filename: 'bundle2.js', // Название выходного файла
         path: path.resolve(__dirname, 'dist'), // Папка, куда будет складываться результат
     },
 
