@@ -18,11 +18,13 @@ class GraphEdge {
      * @param {any} source Исходный узел.
      * @param {any} target Узел-назначение.
      * @param {number} [weight=1] Вес ребра.
+     * @param {Object} properties Объект свойств ребра.
      */
-    constructor(source, target, weight) {
+    constructor(source, target, weight, properties) {
         this.source = source; // Исходный узел
         this.target = target; // Узел-назначение
         this.weight = weight || 1; // Вес ребра (по умолчанию 1)
+        this.properties = properties || {}; // Вес ребра (по умолчанию 1)
     }
 }
 

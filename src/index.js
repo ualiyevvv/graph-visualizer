@@ -1,5 +1,6 @@
 import {Graph} from "./graph";
 import {ForceDirectedGraph} from "./graphLayout";
+import {TooltipManager} from "./tooltipManager";
 
 
 const myGraph = new Graph();
@@ -86,5 +87,7 @@ myGraph.addDirectedEdge(nodeC53, nodeC5, 5000);
 myGraph.addDirectedEdge(nodeC54, nodeC5, 250000000000);
 
 const canvas = document.getElementById("graphCanvas");
-const visualization = new ForceDirectedGraph(myGraph, canvas);
+const tooltip = document.getElementById("tooltip");
+const tooltipManager = new TooltipManager(tooltip);
+const visualization = new ForceDirectedGraph(myGraph, canvas, tooltipManager);
 visualization.graphInit();

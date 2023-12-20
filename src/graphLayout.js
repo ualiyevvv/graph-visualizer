@@ -11,11 +11,13 @@ export class ForceDirectedGraph {
     MAX_SCALE = 10;
     ZOOM_FACTOR = 1.1;
 
-    constructor(graph, canvas) {
+    constructor(graph, canvas, tooltipManager) {
         this.WIDTH = window.innerWidth
         this.HEIGHT = window.innerHeight
 
         this.graph = graph;
+
+        this.tooltipManager = tooltipManager
 
         // this.canvas = document.getElementById(canvasId);
         this.canvas = canvas;
@@ -188,7 +190,6 @@ export class ForceDirectedGraph {
         const mousePosX = parseInt(((event.clientX - this.canvas.offsetLeft) - this.windowCenter.x)/this.scale)+(-this.offsetX);
         const mousePosY = parseInt(((event.clientY - this.canvas.offsetTop) - this.windowCenter.y)/this.scale)+ (-this.offsetY);
 
-
         this.hoveredEdge = null;
         this.graph.edges.forEach(edge => {
             if (this.isCursorNearLine(mousePosX, mousePosY, edge.source, edge.target, edge.weight)) {
@@ -197,12 +198,22 @@ export class ForceDirectedGraph {
         });
         // console.log(this.hoveredEdge)
 
+        const tooltipX = event.clientX;
+        const tooltipY = event.clientY;
+
         if (this.hoveredEdge && !this.animationFrameId) {
             this.animateArrowOnEdge();
+            // Обновление содержимого и позиции tooltip
+            this.tooltipManager.updateTooltipContent(this.hoveredEdge);
+            this.tooltipManager.positionTooltip(tooltipX, tooltipY);
+
+            // Показываем tooltip
+            this.tooltipManager.showTooltip();
         } else if (!this.hoveredEdge && this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = null;
             this.arrowPosition = 0;
+            this.tooltipManager.hideTooltip();
             this.draw();
         }
 

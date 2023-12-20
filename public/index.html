@@ -21,8 +21,20 @@
         width: 100%;
         height: 100%;
     }
+    .tooltip {
+        position: absolute;
+        border: 1px solid #ddd;
+        background-color: white;
+        padding: 10px;
+        border-radius: 4px;
+        display: none; /* Скрыт по умолчанию */
+        z-index: 1000; /* Убедитесь, что tooltip находится над другими элементами */
+        box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        font-size: 14px;
+    }
 </style>
 <body>
     <canvas id="graphCanvas"></canvas>
+    <div id="tooltip" class="tooltip">Tooltip content</div>
 </body>
 </html>
