@@ -1,52 +1,99 @@
-
-export default class Graph {
-    constructor() {
-        this.nodes = new Map();
-    }
-
-    addNode(node) {
-        if (!this.nodes.has(node)) {
-            this.nodes.set(node, new Set());
-        }
-    }
-
-    addEdge(node1, node2) {
-        if (!this.nodes.has(node1) || !this.nodes.has(node2)) {
-            throw new Error("Both nodes must be added to the graph before adding an edge.");
-        }
-        this.nodes.get(node1).add(node2);
-        this.nodes.get(node2).add(node1); // Remove this line if you want a directed graph
-    }
-
-    removeNode(node) {
-        if (this.nodes.has(node)) {
-            for (let neighbor of this.nodes.get(node)) {
-                this.nodes.get(neighbor).delete(node);
-            }
-            this.nodes.delete(node);
-        }
-    }
-
-    removeEdge(node1, node2) {
-        if (this.nodes.has(node1) && this.nodes.has(node2)) {
-            this.nodes.get(node1).delete(node2);
-            this.nodes.get(node2).delete(node1); // Remove this line if you want a directed graph
-        }
-    }
-
-    getNeighbors(node) {
-        return this.nodes.has(node) ? Array.from(this.nodes.get(node)) : [];
-    }
-
-    hasNode(node) {
-        return this.nodes.has(node);
-    }
-
-    hasEdge(node1, node2) {
-        return this.nodes.has(node1) && this.nodes.get(node1).has(node2);
+class GraphNode {
+    /**
+     * Конструктор для создания узла графа.
+     * @param {any} id Уникальный идентификатор узла.
+     * @param {number} size Размер узла.
+     * @param {Object} properties Объект свойств узла.
+     */
+    constructor(id, size, properties) {
+        this.id = id; // Уникальный идентификатор узла
+        this.size = size; // Размер узла
+        this.properties = properties || {}; // Свойства узла (можно передать объект с дополнительными данными)
     }
 }
 
-// console.log(graph.getNeighbors('A')); // ['B']
-// graph.removeEdge('A', 'B');
-// console.log(graph.getNeighbors('A')); // []
+class GraphEdge {
+    /**
+     * Конструктор для создания ребра графа.
+     * @param {any} source Исходный узел.
+     * @param {any} target Узел-назначение.
+     * @param {number} [weight=1] Вес ребра.
+     */
+    constructor(source, target, weight) {
+        this.source = source; // Исходный узел
+        this.target = target; // Узел-назначение
+        this.weight = weight || 1; // Вес ребра (по умолчанию 1)
+    }
+}
+
+export class Graph {
+    constructor() {
+        this.nodes = new Map(); // Хранение узлов графа
+        this.edges = []; // Хранение рёбер графа
+    }
+
+    /**
+     * Добавляет узел в граф.
+     * @param {GraphNode} node Узел для добавления.
+     */
+    addNode(node) {
+        if (this.nodes.has(node.id)) {
+            throw new Error("Узел с таким ID уже существует.");
+        }
+
+        this.nodes.set(node.id, node);
+    }
+
+
+    /**
+     * Возвращает узел по его идентификатору.
+     * @param {any} nodeId Идентификатор узла.
+     * @returns {GraphNode|undefined} Узел, если он найден, иначе undefined.
+     */
+    getNode(nodeId) {
+        return this.nodes.get(nodeId);
+    }
+
+    // Добавление направленного ребра между узлами
+    addDirectedEdge(source, target, weight) {
+        if (!this.nodes.has(source.id) || !this.nodes.has(target.id)) {
+            throw new Error("Узлы должны существовать в графе.");
+        }
+
+        const edge = new GraphEdge(source, target, weight);
+        this.edges.push(edge);
+    }
+
+    /**
+     * Возвращает ребро между двумя узлами, если оно существует.
+     * @param {any} source Исходный узел.
+     * @param {any} target Узел-назначение.
+     * @returns {GraphEdge|undefined} Ребро, если оно найдено, иначе undefined.
+     */
+    getEdge(source, target) {
+        return this.edges.find(edge => edge.source === source && edge.target === target);
+    }
+
+    // Получение всех соседних узлов для данного узла
+    getNeighbors(node) {
+        if (!this.nodes.has(node.id)) {
+            throw new Error("Узел не существует в графе.");
+        }
+
+        const neighbors = [];
+        for (const edge of this.edges) {
+            if (edge.source === node) {
+                neighbors.push({ node: edge.target, weight: edge.weight });
+            }
+        }
+
+        return neighbors;
+    }
+
+    // Получение всех узлов в графе
+    getAllNodes() {
+        return Array.from(this.nodes.values());
+    }
+
+}
+

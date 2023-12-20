@@ -1,4 +1,6 @@
-export default class ForceDirectedGraph {
+import * as d3 from "d3";
+
+export class ForceDirectedGraph {
 
     MIN_X = -1000;
     MIN_Y = -1000;
@@ -9,44 +11,41 @@ export default class ForceDirectedGraph {
     MAX_SCALE = 10;
     ZOOM_FACTOR = 1.1;
 
-    constructor(graph, canvasId) {
+    constructor(graph, canvas) {
         this.WIDTH = window.innerWidth
         this.HEIGHT = window.innerHeight
 
         this.graph = graph;
 
-        this.canvas = document.getElementById(canvasId);
+        // this.canvas = document.getElementById(canvasId);
+        this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
         this.canvas.width = this.WIDTH
         this.canvas.height = this.HEIGHT
 
         this.nodePositions = new Map();
 
-        this.animationFrameRequest = null;
-        this.animationStopTimeout = null
-        this.repulsionForce = 80; // Сила отталкивания
-        this.attractionForce = 0.1; // Сила притяжения
-        this.lastMoveTimestamp = 0; // Для throttling обработки событий мыши
-        this.moveThrottleInterval = 20; // Интервал в миллисекундах
-
-
         this.windowCenter = {
             x: this.WIDTH / 2,
             y: this.HEIGHT / 2
         }
-        // Изначальные параметры зумирования
+
+        // Изначальное состояние canvas
         this.scale = 1;
         this.offsetX = 0;
         this.offsetY = 0;
-        // this.lastZoomAction = null;
-        this.zoomDelta = 1; // в чем отличие от zoom_factor? проверить потом вдруг лишняя перменная
+        this.zoomDelta = 1;
         this.startX = 0;
         this.startY = 0;
 
-        this.isDragging = false;
+        this.isDraggingCanvas = false;
         this.draggingNode = null;
+        this.hoveredEdge = null;
 
-        this.nodeRadius = 10
+        this.arrowPosition = 0
+        this.animationFrameId = null;
+
+        this.nodeRadius = 40
 
         this.initializeMouseEvents();
     }
@@ -59,198 +58,68 @@ export default class ForceDirectedGraph {
     }
 
     graphInit() {
-
-        this.initGraphStructure()
-
-        this.startAnimatingGraph()
-
-        this.stopAnimatingGraph()
+        this.runForceLayout()
     }
-
-    stopAnimatingGraph() {
-        // Установка задержки и остановка анимации
-        this.animationStopTimeout = setTimeout(() => {
-            this.stopAnimationFrame();
-        }, 3500); // 5000 миллисекунд = 5 секунд
-    }
-
-    initGraphStructure() {
-        // Инициализация начальных позиций узлов
-        const centerX = 1;
-        const centerY = 1;
-
-        const radius = Math.min(centerX, centerY) / 2;
-        const nodesCount = this.graph.nodes.size;
-        let angleIncrement = (2 * Math.PI) / nodesCount;
-
-        let i = 0;
-        for (let node of this.graph.nodes.keys()) {
-            let angle = i * angleIncrement;
-            this.nodePositions.set(node, {
-                x: centerX + radius * Math.cos(angle),
-                y: centerY + radius * Math.sin(angle)
-            });
-            i++;
-        }
-    }
-
-    // Здесь должен быть код для обновления позиций узлов на основе силовой раскладки
-    // Это может быть достаточно сложно для реализации в рамках данного примера
-    // Пример: Простое отталкивание узлов друг от друга
-    updateNodePositions() {
-        for (let [node, position] of this.nodePositions) {
-            let forceX = 0, forceY = 0;
-
-            // Рассчитываем силу отталкивания от других узлов
-            for (let [otherNode, otherPosition] of this.nodePositions) {
-                if (node !== otherNode) {
-                    let dx = position.x - otherPosition.x;
-                    let dy = position.y - otherPosition.y;
-                    let distance = Math.sqrt(dx * dx + dy * dy);
-                    if (distance > 0) {
-                        let repulsion = this.repulsionForce / distance;
-                        forceX += repulsion * dx / distance;
-                        forceY += repulsion * dy / distance;
-                    }
-                }
-            }
-
-            // Рассчитываем силу притяжения к соседям
-            for (let neighbor of this.graph.getNeighbors(node)) {
-                if (this.nodePositions.has(neighbor)) {
-                    let neighborPosition = this.nodePositions.get(neighbor);
-                    let dx = neighborPosition.x - position.x;
-                    let dy = neighborPosition.y - position.y;
-                    forceX += this.attractionForce * dx;
-                    forceY += this.attractionForce * dy;
-                }
-            }
-
-            position.x += forceX;
-            position.y += forceY;
-        }
-    }
-
-    startAnimatingGraph() {
-        this.animationFrameRequest = true;
-        const animate = () => {
-            if (!this.animationFrameRequest) return;
-            console.log('animation')
-            this.updateNodePositions(); // Обновляем позиции узлов
-            this.drawGraph(); // Перерисовываем граф
-            requestAnimationFrame(animate);
-        };
-        animate();
-    }
-
-    stopAnimationFrame() {
-        if (this.animationFrameRequest) {
-            cancelAnimationFrame(this.animationFrameRequest);
-            this.animationFrameRequest = null;
-        }
-    }
-    // startAnimation() {
-    //     // Анимационный цикл
-    //     this.animationFrameRequest = true;
-    //
-    //     const animate = () => {
-    //         if (!this.animationFrameRequest) return;
-    //         console.log('animation')
-    //         this.updateNodePositions(); // Обновляем позиции узлов
-    //         this.drawGraphWithAnimation(); // Перерисовываем граф
-    //         requestAnimationFrame(animate);
-    //     };
-    //     animate();
-    // }
-
-    // start() {
-    //     // Инициализация начальных позиций узлов
-    //     const centerX = 1;
-    //     const centerY = 1;
-    //
-    //     const radius = Math.min(centerX, centerY) / 2;
-    //     const nodesCount = this.graph.nodes.size;
-    //     let angleIncrement = (2 * Math.PI) / nodesCount;
-    //
-    //     let i = 0;
-    //     for (let node of this.graph.nodes.keys()) {
-    //         let angle = i * angleIncrement;
-    //         this.nodePositions.set(node, {
-    //             x: centerX + radius * Math.cos(angle),
-    //             y: centerY + radius * Math.sin(angle)
-    //         });
-    //         i++;
-    //     }
-    //
-    //     this.drawGraphWithAnimation()
-    //     // this.startAnimation()
-    // }
-
-    // initializeNodePositions() {
-    //     const centerX = this.canvas.width / 2;
-    //     const centerY = this.canvas.height / 2;
-    //     const radius = Math.min(centerX, centerY) / 2;
-    //     const nodesCount = this.graph.nodes.size;
-    //     let angleIncrement = (2 * Math.PI) / nodesCount;
-    //
-    //     let i = 0;
-    //     for (let node of this.graph.nodes.keys()) {
-    //         let angle = i * angleIncrement;
-    //         this.nodePositions.set(node, {
-    //             x: centerX + radius * Math.cos(angle),
-    //             y: centerY + radius * Math.sin(angle)
-    //         });
-    //         i++;
-    //     }
-    // }
-
     drawGraph() {
-        this.ctx.save();
-        this.ctx.clearRect(0, 0, this.WIDTH, this.HEIGHT);
+        // Отрисовка рёбер
+        this.ctx.strokeStyle = "steelblue";
+        this.ctx.lineWidth = 2;
 
-        this.ctx.setTransform(this.scale, 0, 0, this.scale, this.windowCenter.x, this.windowCenter.y);
-        // Рисуйте ребра
-        this.ctx.strokeStyle = 'black';
-        for (let [node, neighbors] of this.graph.nodes) {
-            neighbors.forEach(neighbor => {
-                if (this.nodePositions.has(node) && this.nodePositions.has(neighbor)) {
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(this.nodePositions.get(node).x, this.nodePositions.get(node).y);
-                    this.ctx.lineTo(this.nodePositions.get(neighbor).x, this.nodePositions.get(neighbor).y);
-                    this.ctx.stroke();
-                }
-            });
-        }
-
-        // Рисуйте узлы
-        for (let [node, position] of this.nodePositions) {
-            this.ctx.fillStyle = 'red';
+        for (const edge of this.graph.edges) {
             this.ctx.beginPath();
-            this.ctx.arc(position.x, position.y, this.nodeRadius, 0, 2 * Math.PI);
-            this.ctx.fill();
-            this.ctx.fillStyle = 'blue';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(node,position.x, position.y);
+            this.ctx.moveTo(edge.source.x, edge.source.y);
+            this.ctx.lineTo(edge.target.x, edge.target.y);
+
+            // Установка толщины линии на основе веса ребра
+            this.ctx.lineWidth = this.getLineWidthBasedOnWeight(edge.weight);
+
+            let colorLine = edge === this.hoveredEdge ? 'red' : 'black'
+            this.ctx.strokeStyle = colorLine; // Изменение цвета при наведении
+            this.ctx.stroke();
+
+            !(edge === this.hoveredEdge) && this.drawArrow(edge.source, edge.target);
         }
 
 
-        this.ctx.fillStyle = 'red'
-        this.ctx.fillRect(-25, -25, 50, 50)
-        this.ctx.fillStyle = 'blue'
-        this.ctx.fillRect(1000, 1000, 50, 50)
-        this.ctx.fillRect(-1000, 1000, 50, 50)
-        this.ctx.fillRect(-1000, -1000, 50, 50)
-        this.ctx.fillRect(1000, -1000, 50, 50)
+        // Отрисовка узлов
+        this.ctx.fillStyle = "steelblue";
 
-        this.ctx.restore(); // очень важен!! при setTransform
+        for (const node of this.graph.getAllNodes()) {
+            this.ctx.beginPath();
+            this.ctx.arc(node.x, node.y, this.nodeRadius, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+
     }
-    // drawGraphWithAnimation() {
-    //     this.drawGraph()
-    //     this.startAnimation()
-    // }
+
+    getLineWidthBasedOnWeight(weight) {
+        const logWeight = Math.log(weight + 1)/this.scale;
+
+        return Math.max(5, Math.min(80, logWeight));
+    }
+
+    animateArrowOnEdge() {
+        // Проверка, что ребро для анимации стрелки выбрано
+        if (!this.hoveredEdge) {
+            if (this.animationFrameId) {
+                cancelAnimationFrame(this.animationFrameId);
+                this.animationFrameId = null;
+            }
+            return;
+        }
+
+        this.arrowPosition += 0.005; // Скорость движения стрелки
+        if (this.arrowPosition > 1) {
+            this.arrowPosition = 0;
+        }
+
+        this.draw();
+
+        this.animationFrameId = requestAnimationFrame(() => this.animateArrowOnEdge());
+    }
 
     draw() {
+        // console.log("DRAW()")
         this.ctx.save();
         this.ctx.clearRect(0, 0, this.WIDTH, this.HEIGHT);
 
@@ -258,8 +127,11 @@ export default class ForceDirectedGraph {
         this.ctx.translate(this.offsetX, this.offsetY)
 
         this.drawGraph()
-        // // Обновление URL с параметрами GET
-        // this.#updateURLParams();
+
+        if (this.hoveredEdge) {
+            this.drawArrow(this.hoveredEdge.source, this.hoveredEdge.target, 'grey', this.arrowPosition);
+        }
+
         this.zoomDelta = 1;
         this.ctx.restore();
     }
@@ -269,83 +141,152 @@ export default class ForceDirectedGraph {
         const mousePosX = parseInt(((event.clientX - this.canvas.offsetLeft) - this.windowCenter.x)/this.scale)+(-this.offsetX);
         const mousePosY = parseInt(((event.clientY - this.canvas.offsetTop) - this.windowCenter.y)/this.scale)+ (-this.offsetY);
 
-        console.log('x:', mousePosX, 'y:', mousePosY)
-        console.log("map sost", this.scale)
-        // console.log("SOST isDragging", this.isDragging)
-        // console.log("SOST draggingNode", this.draggingNode)
-        // console.log(this.graph)
-        console.log(this.nodePositions)
-        console.log("SOST after IF1", this.draggingNode)
 
-        for (let [node, position] of this.nodePositions) {
-            if (mousePosX > position.x-(this.nodeRadius/2) && mousePosX < position.x+(this.nodeRadius/2) ) { // Предполагается, что размер узла около 10x10 пикселей
-                this.draggingNode = node;
-                console.log(node)
-                this.startAnimatingGraph()
-                break;
-            } else {
-                this.draggingNode = null
-            }
+        this.draggingNode = this.forceSimulation.nodes().find(node =>
+            Math.sqrt((node.x - mousePosX) ** 2 + (node.y - mousePosY) ** 2) < this.nodeRadius/this.scale
+        );
+
+        if (this.draggingNode) {
+            this.forceSimulation.alphaTarget(0.3).restart();
+        } else {
+            this.isDraggingCanvas = true
         }
 
         this.startX = event.clientX;
         this.startY = event.clientY;
 
-        console.log("SOST after IF", this.draggingNode)
+    }
+
+    isCursorNearLine(x, y, a, b, weight) {
+        const lineWidth = this.getLineWidthBasedOnWeight(weight) / this.scale;
+        const offset = this.nodeRadius / this.scale;
+
+        // Корректировка начала и конца линии на основе смещения
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const normX = dx / dist;
+        const normY = dy / dist;
+
+        const aOffset = { x: a.x + normX * offset, y: a.y + normY * offset };
+        const bOffset = { x: b.x - normX * offset, y: b.y - normY * offset };
+
+        // Расчет расстояния от курсора до скорректированной линии
+        const distance = Math.abs((bOffset.y - aOffset.y) * x - (bOffset.x - aOffset.x) * y + bOffset.x * aOffset.y - bOffset.y * aOffset.x) /
+            Math.sqrt((bOffset.y - aOffset.y) ** 2 + (bOffset.x - aOffset.x) ** 2);
+
+        // Проверка нахождения точки между скорректированными началом и концом ребра
+        const dotProduct = (x - aOffset.x) * (bOffset.x - aOffset.x) + (y - aOffset.y) * (bOffset.y - aOffset.y);
+        const squaredLengthBA = (bOffset.x - aOffset.x) * (bOffset.x - aOffset.x) + (bOffset.y - aOffset.y) * (bOffset.y - aOffset.y);
+        const param = dotProduct / squaredLengthBA;
+
+        const proximityThreshold = ((lineWidth / 2) * this.scale) + 4;
+        return distance < proximityThreshold && param >= 0 && param <= 1;
     }
 
     handleMouseMove(event) {
         const mousePosX = parseInt(((event.clientX - this.canvas.offsetLeft) - this.windowCenter.x)/this.scale)+(-this.offsetX);
         const mousePosY = parseInt(((event.clientY - this.canvas.offsetTop) - this.windowCenter.y)/this.scale)+ (-this.offsetY);
 
-        // console.log(mousePosX, mousePosY)
-        // console.log('mouse move node',this.draggingNode)
-        if (this.draggingNode) {
-            clearTimeout(this.animationStopTimeout);
-            const position = this.nodePositions.get(this.draggingNode);
-            // const dx = (event.clientX - this.startX)/1.5;
-            // const dy = (event.clientY - this.startY)/1.5;
-            position.x = mousePosX;
-            position.y = mousePosY;
-            // position.x = dx;
-            // position.y = dy;
 
-            // console.log("!!!!!!!!!! draggingNode", this.draggingNode)
-            // this.startAnimatingGraph()
+        this.hoveredEdge = null;
+        this.graph.edges.forEach(edge => {
+            if (this.isCursorNearLine(mousePosX, mousePosY, edge.source, edge.target, edge.weight)) {
+                this.hoveredEdge = edge;
+            }
+        });
+        // console.log(this.hoveredEdge)
+
+        if (this.hoveredEdge && !this.animationFrameId) {
+            this.animateArrowOnEdge();
+        } else if (!this.hoveredEdge && this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+            this.arrowPosition = 0;
+            this.draw();
         }
-        // else {
-        //     // Calculate the distance moved by the mouse
-        //     // const dx = mousePosX - this.offsetX;
-        //     // const dy = mousePosY - this.offsetY;
-        //     const dx = (event.clientX - this.startX)/this.scale;
-        //     const dy = (event.clientY - this.startY)/this.scale;
-        //
-        //     this.offsetX += dx;
-        //     this.offsetY += dy;
-        //
-        //     if (this.offsetX < this.MIN_X) this.offsetX = this.MIN_X;
-        //     if (this.offsetX > this.MAX_X) this.offsetX = this.MAX_X;
-        //     if (this.offsetY < this.MIN_Y) this.offsetY = this.MIN_Y;
-        //     if (this.offsetY > this.MAX_Y) this.offsetY = this.MAX_Y;
-        //
-        //     this.startX = event.clientX;
-        //     this.startY = event.clientY;
-        //
-        //     this.draw();
-        //
-        // }
+
+        if (this.draggingNode) {
+            // Обновляем позицию перетаскиваемого узла
+            this.draggingNode.fx = mousePosX;
+            this.draggingNode.fy = mousePosY;
+        }
+        else if (this.isDraggingCanvas) {
+            const dx = (event.clientX - this.startX)/this.scale;
+            const dy = (event.clientY - this.startY)/this.scale;
+
+            this.offsetX += dx;
+            this.offsetY += dy;
+
+            if (this.offsetX < this.MIN_X) this.offsetX = this.MIN_X;
+            if (this.offsetX > this.MAX_X) this.offsetX = this.MAX_X;
+            if (this.offsetY < this.MIN_Y) this.offsetY = this.MIN_Y;
+            if (this.offsetY > this.MAX_Y) this.offsetY = this.MAX_Y;
+
+            this.startX = event.clientX;
+            this.startY = event.clientY;
+
+        this.draw();
+        }
     }
+
+    drawArrow(source, target, color='grey', position = 0.5) {
+        const offset = this.nodeRadius+30; // Смещение от начала и конца ребра
+        const dx = target.x - source.x;
+        const dy = target.y - source.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const normX = dx / dist;
+        const normY = dy / dist;
+
+        // Новые координаты для начала и конца стрелки с учетом смещения
+        const sourceOffsetX = source.x + offset * normX;
+        const sourceOffsetY = source.y + offset * normY;
+        const targetOffsetX = target.x - offset * normX;
+        const targetOffsetY = target.y - offset * normY;
+
+        color = color === 'black' ? 'grey' : color;
+        const angle = Math.atan2(targetOffsetY - sourceOffsetY, targetOffsetX - sourceOffsetX);
+        const headLength = 30; // размер головки стрелки
+        const headAngle1 = angle - Math.PI / 7;
+        const headAngle2 = angle + Math.PI / 7;
+
+        // Рассчитываем новую позицию для стрелки
+        const edgePoint = {
+            x: sourceOffsetX + (targetOffsetX - sourceOffsetX) * position,
+            y: sourceOffsetY + (targetOffsetY - sourceOffsetY) * position
+        };
+
+        // Координаты для крыльев стрелки
+        const wing1 = {
+            x: edgePoint.x - headLength * Math.cos(headAngle1),
+            y: edgePoint.y - headLength * Math.sin(headAngle1)
+        };
+        const wing2 = {
+            x: edgePoint.x - headLength * Math.cos(headAngle2),
+            y: edgePoint.y - headLength * Math.sin(headAngle2)
+        };
+
+        // Рисуем стрелку
+        this.ctx.beginPath();
+        this.ctx.moveTo(edgePoint.x, edgePoint.y); // Вершина стрелки
+        this.ctx.lineTo(wing1.x, wing1.y); // Первое крыло
+        this.ctx.lineTo(wing2.x, wing2.y); // Второе крыло
+        this.ctx.lineTo(edgePoint.x, edgePoint.y); // Обратно к вершине стрелки
+        this.ctx.fillStyle = color;
+        this.ctx.fill();
+        this.ctx.closePath();
+    }
+
 
     handleMouseUp() {
         if (this.draggingNode) {
-            this.stopAnimatingGraph()
+            this.forceSimulation.alphaTarget(0);
+            this.draggingNode.fx = null;
+            this.draggingNode.fy = null;
         }
-
         this.draggingNode = null;
-        // this.isDragging = false
-
+        this.isDraggingCanvas = false
     }
-
 
     handleZoom(event) {
         const wheelDelta = Math.max(-1, Math.min(1, (event.wheelDelta || -event.detail)));
@@ -368,4 +309,21 @@ export default class ForceDirectedGraph {
         this.draw()
     }
 
+
+    // Запуск силовой раскладки и обновление визуализации
+    runForceLayout() {
+        const simulation = d3.forceSimulation(this.graph.getAllNodes())
+            .force("charge", d3.forceManyBody()
+                .strength(-2000) // Увеличиваем силу отталкивания
+                .distanceMax(500) // Максимальное расстояние воздействия
+            )
+            .force("link", d3.forceLink(this.graph.edges).distance(300))
+            .force("center", d3.forceCenter(0, 0))
+            .on("tick", () => this.draw());
+
+        this.forceSimulation = simulation;
+    }
+
 }
+
+
