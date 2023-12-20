@@ -23,6 +23,7 @@ export default class ForceDirectedGraph {
         this.nodePositions = new Map();
 
         this.animationFrameRequest = null;
+        this.animationStopTimeout = null
         this.repulsionForce = 80; // Сила отталкивания
         this.attractionForce = 0.1; // Сила притяжения
         this.lastMoveTimestamp = 0; // Для throttling обработки событий мыши
@@ -45,30 +46,35 @@ export default class ForceDirectedGraph {
         this.isDragging = false;
         this.draggingNode = null;
 
-        this.#getURLParams()
+        this.nodeRadius = 10
+
         this.initializeMouseEvents();
     }
 
-    startAnimation() {
-        // Анимационный цикл
-        this.animationFrameRequest = true;
-
-        const animate = () => {
-            if (!this.animationFrameRequest) return;
-            console.log('animation')
-            this.updateNodePositions(); // Обновляем позиции узлов
-            this.draw(); // Перерисовываем граф
-            requestAnimationFrame(animate);
-        };
-        animate();
-
-        // Установка задержки и остановка анимации
-        // setTimeout(() => {
-        //     this.stop();
-        // }, 3500); // 5000 миллисекунд = 5 секунд
+    initializeMouseEvents() {
+        this.canvas.addEventListener('wheel', (event) => this.handleZoom(event));
+        this.canvas.addEventListener('mousedown', (event) => this.handleMouseDown(event));
+        this.canvas.addEventListener('mousemove', (event) => this.handleMouseMove(event));
+        this.canvas.addEventListener('mouseup', (event) => this.handleMouseUp(event));
     }
 
-    start() {
+    graphInit() {
+
+        this.initGraphStructure()
+
+        this.startAnimatingGraph()
+
+        this.stopAnimatingGraph()
+    }
+
+    stopAnimatingGraph() {
+        // Установка задержки и остановка анимации
+        this.animationStopTimeout = setTimeout(() => {
+            this.stopAnimationFrame();
+        }, 3500); // 5000 миллисекунд = 5 секунд
+    }
+
+    initGraphStructure() {
         // Инициализация начальных позиций узлов
         const centerX = 1;
         const centerY = 1;
@@ -86,80 +92,6 @@ export default class ForceDirectedGraph {
             });
             i++;
         }
-
-        this.startAnimation()
-    }
-
-    // initializeNodePositions() {
-    //     const centerX = this.canvas.width / 2;
-    //     const centerY = this.canvas.height / 2;
-    //     const radius = Math.min(centerX, centerY) / 2;
-    //     const nodesCount = this.graph.nodes.size;
-    //     let angleIncrement = (2 * Math.PI) / nodesCount;
-    //
-    //     let i = 0;
-    //     for (let node of this.graph.nodes.keys()) {
-    //         let angle = i * angleIncrement;
-    //         this.nodePositions.set(node, {
-    //             x: centerX + radius * Math.cos(angle),
-    //             y: centerY + radius * Math.sin(angle)
-    //         });
-    //         i++;
-    //     }
-    // }
-
-    drawGraph() {
-        // this.ctx.save();
-        // this.ctx.clearRect(0, 0, this.WIDTH, this.HEIGHT);
-
-        // Рисуйте ребра
-        this.ctx.strokeStyle = 'black';
-        for (let [node, neighbors] of this.graph.nodes) {
-            neighbors.forEach(neighbor => {
-                if (this.nodePositions.has(node) && this.nodePositions.has(neighbor)) {
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(this.nodePositions.get(node).x, this.nodePositions.get(node).y);
-                    this.ctx.lineTo(this.nodePositions.get(neighbor).x, this.nodePositions.get(neighbor).y);
-                    this.ctx.stroke();
-                }
-            });
-        }
-
-        this.ctx.fillStyle = 'red'
-        this.ctx.fillRect(-25, -25, 50, 50)
-        this.ctx.fillStyle = 'blue'
-        this.ctx.fillRect(1000, 1000, 50, 50)
-        this.ctx.fillRect(-1000, 1000, 50, 50)
-        this.ctx.fillRect(-1000, -1000, 50, 50)
-        this.ctx.fillRect(1000, -1000, 50, 50)
-
-        // Рисуйте узлы
-        for (let [node, position] of this.nodePositions) {
-            this.ctx.fillStyle = 'red';
-            this.ctx.beginPath();
-            this.ctx.arc(position.x, position.y, 10, 0, 2 * Math.PI);
-            this.ctx.fill();
-            this.ctx.fillStyle = 'blue';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(node,position.x, position.y);
-        }
-
-
-    }
-
-    draw() {
-        this.ctx.save();
-        this.ctx.clearRect(0, 0, this.WIDTH, this.HEIGHT);
-
-        this.ctx.setTransform(this.scale, 0, 0, this.scale, this.windowCenter.x, this.windowCenter.y);
-        this.ctx.translate(this.offsetX, this.offsetY)
-
-        this.drawGraph()
-        // // Обновление URL с параметрами GET
-        this.#updateURLParams();
-        this.zoomDelta = 1;
-        this.ctx.restore();
     }
 
     // Здесь должен быть код для обновления позиций узлов на основе силовой раскладки
@@ -199,93 +131,226 @@ export default class ForceDirectedGraph {
         }
     }
 
-
-    initializeMouseEvents() {
-        this.canvas.addEventListener('wheel', (event) => this.handleZoom(event));
-        this.canvas.addEventListener('mousedown', (event) => this.handleMouseDown(event));
-        this.canvas.addEventListener('mousemove', (event) => this.handleMouseMove(event));
-        this.canvas.addEventListener('mouseup', (event) => this.handleMouseUp(event));
+    startAnimatingGraph() {
+        this.animationFrameRequest = true;
+        const animate = () => {
+            if (!this.animationFrameRequest) return;
+            console.log('animation')
+            this.updateNodePositions(); // Обновляем позиции узлов
+            this.drawGraph(); // Перерисовываем граф
+            requestAnimationFrame(animate);
+        };
+        animate();
     }
+
+    stopAnimationFrame() {
+        if (this.animationFrameRequest) {
+            cancelAnimationFrame(this.animationFrameRequest);
+            this.animationFrameRequest = null;
+        }
+    }
+    // startAnimation() {
+    //     // Анимационный цикл
+    //     this.animationFrameRequest = true;
+    //
+    //     const animate = () => {
+    //         if (!this.animationFrameRequest) return;
+    //         console.log('animation')
+    //         this.updateNodePositions(); // Обновляем позиции узлов
+    //         this.drawGraphWithAnimation(); // Перерисовываем граф
+    //         requestAnimationFrame(animate);
+    //     };
+    //     animate();
+    // }
+
+    // start() {
+    //     // Инициализация начальных позиций узлов
+    //     const centerX = 1;
+    //     const centerY = 1;
+    //
+    //     const radius = Math.min(centerX, centerY) / 2;
+    //     const nodesCount = this.graph.nodes.size;
+    //     let angleIncrement = (2 * Math.PI) / nodesCount;
+    //
+    //     let i = 0;
+    //     for (let node of this.graph.nodes.keys()) {
+    //         let angle = i * angleIncrement;
+    //         this.nodePositions.set(node, {
+    //             x: centerX + radius * Math.cos(angle),
+    //             y: centerY + radius * Math.sin(angle)
+    //         });
+    //         i++;
+    //     }
+    //
+    //     this.drawGraphWithAnimation()
+    //     // this.startAnimation()
+    // }
+
+    // initializeNodePositions() {
+    //     const centerX = this.canvas.width / 2;
+    //     const centerY = this.canvas.height / 2;
+    //     const radius = Math.min(centerX, centerY) / 2;
+    //     const nodesCount = this.graph.nodes.size;
+    //     let angleIncrement = (2 * Math.PI) / nodesCount;
+    //
+    //     let i = 0;
+    //     for (let node of this.graph.nodes.keys()) {
+    //         let angle = i * angleIncrement;
+    //         this.nodePositions.set(node, {
+    //             x: centerX + radius * Math.cos(angle),
+    //             y: centerY + radius * Math.sin(angle)
+    //         });
+    //         i++;
+    //     }
+    // }
+
+    drawGraph() {
+        this.ctx.save();
+        this.ctx.clearRect(0, 0, this.WIDTH, this.HEIGHT);
+
+        this.ctx.setTransform(this.scale, 0, 0, this.scale, this.windowCenter.x, this.windowCenter.y);
+        // Рисуйте ребра
+        this.ctx.strokeStyle = 'black';
+        for (let [node, neighbors] of this.graph.nodes) {
+            neighbors.forEach(neighbor => {
+                if (this.nodePositions.has(node) && this.nodePositions.has(neighbor)) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.nodePositions.get(node).x, this.nodePositions.get(node).y);
+                    this.ctx.lineTo(this.nodePositions.get(neighbor).x, this.nodePositions.get(neighbor).y);
+                    this.ctx.stroke();
+                }
+            });
+        }
+
+        // Рисуйте узлы
+        for (let [node, position] of this.nodePositions) {
+            this.ctx.fillStyle = 'red';
+            this.ctx.beginPath();
+            this.ctx.arc(position.x, position.y, this.nodeRadius, 0, 2 * Math.PI);
+            this.ctx.fill();
+            this.ctx.fillStyle = 'blue';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(node,position.x, position.y);
+        }
+
+
+        this.ctx.fillStyle = 'red'
+        this.ctx.fillRect(-25, -25, 50, 50)
+        this.ctx.fillStyle = 'blue'
+        this.ctx.fillRect(1000, 1000, 50, 50)
+        this.ctx.fillRect(-1000, 1000, 50, 50)
+        this.ctx.fillRect(-1000, -1000, 50, 50)
+        this.ctx.fillRect(1000, -1000, 50, 50)
+
+        this.ctx.restore(); // очень важен!! при setTransform
+    }
+    // drawGraphWithAnimation() {
+    //     this.drawGraph()
+    //     this.startAnimation()
+    // }
+
+    draw() {
+        this.ctx.save();
+        this.ctx.clearRect(0, 0, this.WIDTH, this.HEIGHT);
+
+        this.ctx.setTransform(this.scale, 0, 0, this.scale, this.windowCenter.x, this.windowCenter.y);
+        this.ctx.translate(this.offsetX, this.offsetY)
+
+        this.drawGraph()
+        // // Обновление URL с параметрами GET
+        // this.#updateURLParams();
+        this.zoomDelta = 1;
+        this.ctx.restore();
+    }
+
 
     handleMouseDown(event) {
         const mousePosX = parseInt(((event.clientX - this.canvas.offsetLeft) - this.windowCenter.x)/this.scale)+(-this.offsetX);
         const mousePosY = parseInt(((event.clientY - this.canvas.offsetTop) - this.windowCenter.y)/this.scale)+ (-this.offsetY);
 
+        console.log('x:', mousePosX, 'y:', mousePosY)
+        console.log("map sost", this.scale)
+        // console.log("SOST isDragging", this.isDragging)
+        // console.log("SOST draggingNode", this.draggingNode)
         // console.log(this.graph)
-        // console.log(this.nodePositions)
+        console.log(this.nodePositions)
+        console.log("SOST after IF1", this.draggingNode)
 
         for (let [node, position] of this.nodePositions) {
-            const dx = mousePosX - position.x;
-            const dy = mousePosY - position.y;
-
-            // https://chat.openai.com/share/5c4462c8-4603-478c-b430-c43437c9faa4
-            // if (distance <= radius) { // Предположим, что радиус узла - это radius
-            //     this.draggingNode = node;
-            //     break;
-            // }
-            if (dx * dx + dy * dy < 100) { // Предполагается, что размер узла около 10x10 пикселей
+            if (mousePosX > position.x-(this.nodeRadius/2) && mousePosX < position.x+(this.nodeRadius/2) ) { // Предполагается, что размер узла около 10x10 пикселей
                 this.draggingNode = node;
                 console.log(node)
+                this.startAnimatingGraph()
                 break;
+            } else {
+                this.draggingNode = null
             }
         }
 
-        this.isDragging = true;
-        // this.stop();
         this.startX = event.clientX;
         this.startY = event.clientY;
-        console.log('x:', mousePosX, 'y:', mousePosY)
-        // console.log('xTR:', transformedX, 'yTR:', transformedY)
+
+        console.log("SOST after IF", this.draggingNode)
     }
 
     handleMouseMove(event) {
-        // const now = Date.now();
-        // if (now - this.lastMoveTimestamp > this.moveThrottleInterval && this.draggingNode) {
-        //     this.lastMoveTimestamp = now;
-        //     const position = this.nodePositions.get(this.draggingNode);
-        //     position.x = event.offsetX;
-        //     position.y = event.offsetY;
-        // }
-        if (this.draggingNode) {
-            const position = this.nodePositions.get(this.draggingNode);
-            position.x = event.offsetX;
-            position.y = event.offsetY;
-
-            this.startAnimation()
-        } else if (this.isDragging) {
-            // Calculate the distance moved by the mouse
-            // const dx = mousePosX - this.offsetX;
-            // const dy = mousePosY - this.offsetY;
-            const dx = (event.clientX - this.startX)/this.scale;
-            const dy = (event.clientY - this.startY)/this.scale;
-
-            this.offsetX += dx;
-            this.offsetY += dy;
-
-            if (this.offsetX < this.MIN_X) this.offsetX = this.MIN_X;
-            if (this.offsetX > this.MAX_X) this.offsetX = this.MAX_X;
-            if (this.offsetY < this.MIN_Y) this.offsetY = this.MIN_Y;
-            if (this.offsetY > this.MAX_Y) this.offsetY = this.MAX_Y;
-
-            this.startX = event.clientX;
-            this.startY = event.clientY;
-
-            this.draw();
-
-        }
-    }
-
-    handleMouseUp() {
         const mousePosX = parseInt(((event.clientX - this.canvas.offsetLeft) - this.windowCenter.x)/this.scale)+(-this.offsetX);
         const mousePosY = parseInt(((event.clientY - this.canvas.offsetTop) - this.windowCenter.y)/this.scale)+ (-this.offsetY);
 
+        // console.log(mousePosX, mousePosY)
+        // console.log('mouse move node',this.draggingNode)
+        if (this.draggingNode) {
+            clearTimeout(this.animationStopTimeout);
+            const position = this.nodePositions.get(this.draggingNode);
+            // const dx = (event.clientX - this.startX)/1.5;
+            // const dy = (event.clientY - this.startY)/1.5;
+            position.x = mousePosX;
+            position.y = mousePosY;
+            // position.x = dx;
+            // position.y = dy;
 
-        this.draggingNode = null;
-        // if (this.isDragging)
-        //     this.start();
-        this.isDragging = false
+            // console.log("!!!!!!!!!! draggingNode", this.draggingNode)
+            // this.startAnimatingGraph()
+        }
+        // else {
+        //     // Calculate the distance moved by the mouse
+        //     // const dx = mousePosX - this.offsetX;
+        //     // const dy = mousePosY - this.offsetY;
+        //     const dx = (event.clientX - this.startX)/this.scale;
+        //     const dy = (event.clientY - this.startY)/this.scale;
+        //
+        //     this.offsetX += dx;
+        //     this.offsetY += dy;
+        //
+        //     if (this.offsetX < this.MIN_X) this.offsetX = this.MIN_X;
+        //     if (this.offsetX > this.MAX_X) this.offsetX = this.MAX_X;
+        //     if (this.offsetY < this.MIN_Y) this.offsetY = this.MIN_Y;
+        //     if (this.offsetY > this.MAX_Y) this.offsetY = this.MAX_Y;
+        //
+        //     this.startX = event.clientX;
+        //     this.startY = event.clientY;
+        //
+        //     this.draw();
+        //
+        // }
     }
 
+    handleMouseUp() {
+        if (this.draggingNode) {
+            this.stopAnimatingGraph()
+        }
+
+        this.draggingNode = null;
+        // this.isDragging = false
+
+    }
+
+
+    handleZoom(event) {
+        const wheelDelta = Math.max(-1, Math.min(1, (event.wheelDelta || -event.detail)));
+        this.zoom(wheelDelta)
+    }
 
     zoom(coefficient) {
         if (coefficient > 0) {
@@ -301,37 +366,6 @@ export default class ForceDirectedGraph {
         if (this.scale > this.MAX_SCALE) this.scale = this.MAX_SCALE;
 
         this.draw()
-    }
-
-    handleZoom(event) {
-        // this.stop();
-        const wheelDelta = Math.max(-1, Math.min(1, (event.wheelDelta || -event.detail)));
-        this.zoom(wheelDelta)
-        // this.start();
-    }
-
-    // Обновление URL с параметрами GET
-    #updateURLParams() {
-        const params = new URLSearchParams(window.location.search);
-        params.set('scale', this.scale.toFixed(1));
-        params.set('offsetX', parseInt(this.offsetX));
-        params.set('offsetY', parseInt(this.offsetY));
-        window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
-    }
-
-    // Получение параметров из URL
-    #getURLParams() {
-        const params = new URLSearchParams(window.location.search);
-        this.scale = parseFloat(params.get('scale')) || this.scale;
-        this.offsetX = parseInt(params.get('offsetX')) || this.offsetX;
-        this.offsetY = parseInt(params.get('offsetY')) || this.offsetY;
-    }
-
-    stop() {
-        if (this.animationFrameRequest) {
-            cancelAnimationFrame(this.animationFrameRequest);
-            this.animationFrameRequest = null;
-        }
     }
 
 }

@@ -12,5 +12,5 @@ nodes.map(node => graph.addNode(node))
 links.map(link => graph.addEdge(link[0], link[1]))
 
 let fdGraph = new ForceDirectedGraph(graph, 'graphCanvas');
-fdGraph.start();
+fdGraph.graphInit();
 
