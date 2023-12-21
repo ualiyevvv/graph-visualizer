@@ -4,7 +4,7 @@
 
 `npm install` <br>
 `npm run build` <br>
-open `public/index.html` <br>
+open `dist/index.html` <br>
 
 ## Функциональные особенности
 - панорамирование, масштабирование канваса
