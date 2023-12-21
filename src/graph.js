@@ -40,7 +40,8 @@ export class Graph {
      */
     addNode(node) {
         if (this.nodes.has(node.id)) {
-            throw new Error("Узел с таким ID уже существует.");
+            // throw new Error("Узел с таким ID уже существует.");
+            return
         }
 
         this.nodes.set(node.id, node);
@@ -56,13 +57,20 @@ export class Graph {
         return this.nodes.get(nodeId);
     }
 
-    // Добавление направленного ребра между узлами
-    addDirectedEdge(source, target, weight) {
+
+    /**
+     * Добавление направленного ребра между узлами.
+     * @param {any} source Исходный узел.
+     * @param {any} target Узел-назначение.
+     * @param {number} weight Вес ребра.
+     * @param {Object} properties Свойства ребра.
+     */
+    addDirectedEdge(source, target, weight, properties) {
         if (!this.nodes.has(source.id) || !this.nodes.has(target.id)) {
             throw new Error("Узлы должны существовать в графе.");
         }
 
-        const edge = new GraphEdge(source, target, weight);
+        const edge = new GraphEdge(source, target, weight, properties);
         this.edges.push(edge);
     }
 
@@ -74,6 +82,11 @@ export class Graph {
      */
     getEdge(source, target) {
         return this.edges.find(edge => edge.source === source && edge.target === target);
+    }
+
+    hasNode(nodeId) {
+        return this.nodes.has(nodeId);
+
     }
 
     // Получение всех соседних узлов для данного узла

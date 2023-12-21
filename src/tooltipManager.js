@@ -9,7 +9,11 @@ export class TooltipManager {
 
     updateTooltipContent(edge) {
         const tooltip = document.getElementById('tooltip');
-        tooltip.innerHTML = `Edge Info: ${edge.id}`; // Используйте нужные свойства ребра
+        // console.log('TOOPLTIP EDGE',edge)
+        tooltip.innerHTML = '<b>Transactions:</b>';
+        edge.properties?.transactions.map(transaction => {
+            tooltip.innerHTML += ` <br/>${transaction.hash}`
+        })
     }
 
     positionTooltip(x, y) {

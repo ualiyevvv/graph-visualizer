@@ -2,92 +2,150 @@ import {Graph} from "./graph";
 import {ForceDirectedGraph} from "./graphLayout";
 import {TooltipManager} from "./tooltipManager";
 
+//
+// fetch(
+//     'http://159.223.225.226:8080/api/v1/transaction/0xfa9437bda53830ec7aad2b525b6f7a16bf0e9cf2/group?blockchain=ethereum&filter=with')
+//     .then(response => {
+//         if (!response.ok) {
+//             throw new Error(`Ошибка HTTP: ${response.status}`);
+//         }
+//         return response.json();
+//     })
+//     .then(data => {
+//
+//
+//         // let count = 0;
+//         // function buildGraphFromTransactions(graph, transactions) {
+//         //
+//         //     transactions.forEach(day => {
+//         //         let edgeWeight = day.receive_sum;
+//         //         // count += 1
+//         //         // console.log(day,count)
+//         //         let sourceNode, targetNode;
+//         //         let transactionsArray = []
+//         //
+//         //         const txNode = {id: day.transactions[0].with, size: day.receive_sum}
+//         //
+//         //         day.transactions.forEach(tx => {
+//         //             transactionsArray.push(tx); // Or select specific properties
+//         //             sourceNode = tx.is_sender ? nodeRoot : txNode;
+//         //             targetNode = tx.is_sender ? txNode : nodeRoot;
+//         //         });
+//         //
+//         //         graph.addNode(txNode);
+//         //
+//         //         graph.addDirectedEdge(sourceNode, targetNode, edgeWeight, {
+//         //             transactions_count: day.transactions.length,
+//         //             transactions: transactionsArray
+//         //         });
+//         //
+//         //     });
+//         // }
+//         //
+//         // buildGraphFromTransactions(myGraph, data, rootAddress)
+//         //
+//         // console.log(myGraph)
+//
+//         const canvas = document.getElementById("graphCanvas");
+//         const tooltip = document.getElementById("tooltip");
+//         const tooltipManager = new TooltipManager(tooltip);
+//         const visualization = new ForceDirectedGraph(myGraph, canvas, tooltipManager);
+//         visualization.graphInit();
+//
+//     })
+//     .catch(error => {
+//         console.error(`Произошла ошибка: ${error.message}`);
+//     });
 
+
+// const myGraph = new Graph();
+// const nodeA = { id: "A", size: 20 };
+// const nodeB = { id: "B", size: 30000000000 };
+// myGraph.addNode(nodeA);
+// myGraph.addNode(nodeB);
+// myGraph.addDirectedEdge(nodeB, nodeA, 2, {});
+
+const address = '0xfa9437bda53830ec7aad2b525b6f7a16bf0e9cf2'
 const myGraph = new Graph();
-
-// Добавление узлов
-const nodeA = { id: "A", size: 20 };
-const nodeB = { id: "B", size: 30000000000 };
-const nodeC = { id: "C", size: 25 };
-const nodeC1 = { id: "C1", size: 250000 };
-const nodeC2 = { id: "C2", size: 25000 };
-const nodeC3 = { id: "C3", size: 2500 };
-const nodeC4 = { id: "C4", size: 250 };
-const nodeC41 = { id: "C41", size: 250 };
-const nodeC42 = { id: "C42", size: 250 };
-const nodeC43 = { id: "C43", size: 250 };
-const nodeC44 = { id: "C44", size: 250 };
-const nodeC45 = { id: "C45", size: 250 };
-const nodeC451 = { id: "C451", size: 250 };
-const nodeC452 = { id: "C452", size: 250 };
-const nodeC453 = { id: "C453", size: 250 };
-const nodeC454 = { id: "C454", size: 250 };
-const nodeC455 = { id: "C455", size: 250 };
-const nodeC456 = { id: "C456", size: 250 };
-const nodeC457 = { id: "C457", size: 250 };
-const nodeC458 = { id: "C458", size: 250 };
-const nodeC5 = { id: "C5", size: 25 };
-const nodeC51 = { id: "C51", size: 25 };
-const nodeC52 = { id: "C52", size: 25 };
-const nodeC53 = { id: "C53", size: 25 };
-const nodeC54 = { id: "C54", size: 25 };
-
-myGraph.addNode(nodeA);
-myGraph.addNode(nodeB);
-myGraph.addNode(nodeC);
-myGraph.addNode(nodeC1);
-myGraph.addNode(nodeC2);
-myGraph.addNode(nodeC3);
-myGraph.addNode(nodeC4);
-myGraph.addNode(nodeC41);
-myGraph.addNode(nodeC42);
-myGraph.addNode(nodeC43);
-myGraph.addNode(nodeC44);
-myGraph.addNode(nodeC45);
-myGraph.addNode(nodeC451);
-myGraph.addNode(nodeC452);
-myGraph.addNode(nodeC453);
-myGraph.addNode(nodeC454);
-myGraph.addNode(nodeC455);
-myGraph.addNode(nodeC456);
-myGraph.addNode(nodeC457);
-myGraph.addNode(nodeC458);
-myGraph.addNode(nodeC5);
-myGraph.addNode(nodeC51);
-myGraph.addNode(nodeC52);
-myGraph.addNode(nodeC53);
-myGraph.addNode(nodeC54);
-
-// Добавление направленных рёбер
-myGraph.addDirectedEdge(nodeB, nodeA, 2);
-myGraph.addDirectedEdge(nodeC, nodeA, 5);
-myGraph.addDirectedEdge(nodeC1, nodeA, 5);
-myGraph.addDirectedEdge(nodeC2, nodeA, 10);
-myGraph.addDirectedEdge(nodeC3, nodeA, 30);
-myGraph.addDirectedEdge(nodeC4, nodeA, 15);
-myGraph.addDirectedEdge(nodeC41, nodeA, 0);
-myGraph.addDirectedEdge(nodeC42, nodeA, 1500);
-myGraph.addDirectedEdge(nodeC43, nodeA, 15000);
-myGraph.addDirectedEdge(nodeC44, nodeA, 1500);
-myGraph.addDirectedEdge(nodeC45, nodeA, 15);
-myGraph.addDirectedEdge(nodeC451, nodeA, 15);
-myGraph.addDirectedEdge(nodeC452, nodeA, 15000);
-myGraph.addDirectedEdge(nodeC453, nodeA, 15000);
-myGraph.addDirectedEdge(nodeC454, nodeA, 15);
-myGraph.addDirectedEdge(nodeC455, nodeA, 1500);
-myGraph.addDirectedEdge(nodeC456, nodeA, 15);
-myGraph.addDirectedEdge(nodeC457, nodeA, 15);
-myGraph.addDirectedEdge(nodeC458, nodeA, 15);
-myGraph.addDirectedEdge(nodeC45, nodeA, 15);
-myGraph.addDirectedEdge(nodeC45, nodeA, 15);
-myGraph.addDirectedEdge(nodeC5, nodeA, 15);
-myGraph.addDirectedEdge(nodeC51, nodeC5, 1500);
-myGraph.addDirectedEdge(nodeC52, nodeC5, 50000);
-myGraph.addDirectedEdge(nodeC53, nodeC5, 5000);
-myGraph.addDirectedEdge(nodeC54, nodeC5, 250000000000);
-
 const canvas = document.getElementById("graphCanvas");
 const tooltip = document.getElementById("tooltip");
 const tooltipManager = new TooltipManager(tooltip);
 const visualization = new ForceDirectedGraph(myGraph, canvas, tooltipManager);
-visualization.graphInit();
+
+/**
+ * Обращается к серверу за транзакциями узла, по которому кликнули, и обновляет граф.
+ * @param {GraphNode} clickedNode узел, по которому кликнули.
+ * @param {string} url api_url, по умолчанию this.api_url.
+ */
+const api_url = `http://159.223.225.226:8080/api/v1/`
+async function fetchTransactionsAndBuildGraph(clickedNode, graph, url=api_url) {
+    console.log('FEETCH')
+    try {
+        const response = await fetch(url+`transaction/${clickedNode.id}/group?blockchain=ethereum&filter=with`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const transactions = await response.json();
+        console.log('FEETCH transactions', transactions)
+
+        // Call the function to build the graph with the fetched transactions
+        buildGraphFromTransactions(transactions, graph, clickedNode);
+    } catch (error) {
+        console.error('Error fetching transactions:', error);
+    }
+}
+
+function buildGraphFromTransactions(transactions, graph, nodeRoot) {
+    graph.addNode(nodeRoot)
+    transactions.forEach(day => {
+        let edgeWeight = day.receive_sum;
+        let sourceNode, targetNode;
+        let transactionsArray = []
+
+        const txNode = {
+            id: day.transactions[0].with,
+            size: (day.receive_sum ? day.receive_sum : 0) + (day.send_sum ? day.send_sum : 0)
+        }
+
+        day.transactions.forEach(tx => {
+            transactionsArray.push(tx); // Or select specific properties
+            sourceNode = tx.is_sender ? nodeRoot : txNode;
+            targetNode = tx.is_sender ? txNode : nodeRoot;
+        });
+
+        graph.addNode(txNode);
+
+        graph.addDirectedEdge(sourceNode, targetNode, edgeWeight, {
+            transactions_count: day.transactions.length,
+            transactions: transactionsArray
+        });
+
+    });
+}
+(async () => {
+    try {
+        await fetchTransactionsAndBuildGraph({id: address}, myGraph);
+        // this.runForceLayout();
+
+        visualization.runForceLayout();
+    } catch (error) {
+        console.error('Error in graph initialization:', error);
+    }
+})();
+
+visualization.on('nodeDragStart', (node) => {
+    (async () => {
+        try {
+            await fetchTransactionsAndBuildGraph(node, myGraph);
+            // this.runForceLayout();
+
+            visualization.updateSimulation()
+        } catch (error) {
+            console.error('Error in graph initialization:', error);
+        }
+    })();
+});
+
+
+// console.log(myGraph)
+

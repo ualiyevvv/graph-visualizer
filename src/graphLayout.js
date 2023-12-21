@@ -1,6 +1,7 @@
 import * as d3 from "d3";
+import {EventEmitter} from "./eventEmitter";
 
-export class ForceDirectedGraph {
+export class ForceDirectedGraph extends EventEmitter {
 
     MIN_X = -1000;
     MIN_Y = -1000;
@@ -12,6 +13,8 @@ export class ForceDirectedGraph {
     ZOOM_FACTOR = 1.1;
 
     constructor(graph, canvas, tooltipManager) {
+        super();
+
         this.WIDTH = window.innerWidth
         this.HEIGHT = window.innerHeight
 
@@ -49,6 +52,8 @@ export class ForceDirectedGraph {
 
         this.nodeRadius = 40
 
+
+
         this.initializeMouseEvents();
     }
 
@@ -60,6 +65,10 @@ export class ForceDirectedGraph {
     }
 
     graphInit() {
+        // this.graph.addNode({id: address})
+
+        console.log('GRAPH', this.graph)
+        // await this.fetchTransactionsAndBuildGraph(this.graph.getNode(address))
         this.runForceLayout()
     }
     drawGraph() {
@@ -150,6 +159,9 @@ export class ForceDirectedGraph {
 
         if (this.draggingNode) {
             this.forceSimulation.alphaTarget(0.3).restart();
+            console.log(this.draggingNode)
+            // Генерация события
+            this.emit('nodeDragStart', this.draggingNode);
         } else {
             this.isDraggingCanvas = true
         }
@@ -201,14 +213,15 @@ export class ForceDirectedGraph {
         const tooltipX = event.clientX;
         const tooltipY = event.clientY;
 
-        if (this.hoveredEdge && !this.animationFrameId) {
-            this.animateArrowOnEdge();
+        if (this.hoveredEdge) {
             // Обновление содержимого и позиции tooltip
             this.tooltipManager.updateTooltipContent(this.hoveredEdge);
             this.tooltipManager.positionTooltip(tooltipX, tooltipY);
-
             // Показываем tooltip
             this.tooltipManager.showTooltip();
+        }
+        if (this.hoveredEdge && !this.animationFrameId) {
+            this.animateArrowOnEdge();
         } else if (!this.hoveredEdge && this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = null;
@@ -229,10 +242,10 @@ export class ForceDirectedGraph {
             this.offsetX += dx;
             this.offsetY += dy;
 
-            if (this.offsetX < this.MIN_X) this.offsetX = this.MIN_X;
-            if (this.offsetX > this.MAX_X) this.offsetX = this.MAX_X;
-            if (this.offsetY < this.MIN_Y) this.offsetY = this.MIN_Y;
-            if (this.offsetY > this.MAX_Y) this.offsetY = this.MAX_Y;
+            // if (this.offsetX < this.MIN_X) this.offsetX = this.MIN_X;
+            // if (this.offsetX > this.MAX_X) this.offsetX = this.MAX_X;
+            // if (this.offsetY < this.MIN_Y) this.offsetY = this.MIN_Y;
+            // if (this.offsetY > this.MAX_Y) this.offsetY = this.MAX_Y;
 
             this.startX = event.clientX;
             this.startY = event.clientY;
@@ -291,6 +304,7 @@ export class ForceDirectedGraph {
 
     handleMouseUp() {
         if (this.draggingNode) {
+            // this.fetchTransactionsAndBuildGraph(this.draggingNode)
             this.forceSimulation.alphaTarget(0);
             this.draggingNode.fx = null;
             this.draggingNode.fy = null;
@@ -323,17 +337,52 @@ export class ForceDirectedGraph {
 
     // Запуск силовой раскладки и обновление визуализации
     runForceLayout() {
+        console.log(this.graph)
+
+        const numNodes = this.graph.getAllNodes().length;
+
+        // Расчет параметров в зависимости от количества узлов
+        const chargeStrength = -1000 - 15 * Math.sqrt(numNodes); // Увеличиваем силу отталкивания
+        const chargeDistanceMax = 500 + 20 * Math.sqrt(numNodes); // Увеличиваем максимальное расстояние
+        const linkDistance = 300 + 5 * Math.sqrt(numNodes); // Увеличиваем дистанцию между узлами
+
+
         const simulation = d3.forceSimulation(this.graph.getAllNodes())
             .force("charge", d3.forceManyBody()
-                .strength(-2000) // Увеличиваем силу отталкивания
-                .distanceMax(500) // Максимальное расстояние воздействия
+                .strength(chargeStrength) // Увеличиваем силу отталкивания
+                .distanceMax(chargeDistanceMax) // Максимальное расстояние воздействия
             )
-            .force("link", d3.forceLink(this.graph.edges).distance(300))
+            .force("link", d3.forceLink(this.graph.edges).distance(linkDistance))
             .force("center", d3.forceCenter(0, 0))
-            .on("tick", () => this.draw());
+            .on("tick", () => {
+                // // Обновление положений узлов
+                // this.graph.getAllNodes().forEach(node => {
+                //     node.fx = node.x; // фиксация текущего положения
+                //     node.fy = node.y;
+                // });
+                this.draw();
+            });
 
         this.forceSimulation = simulation;
     }
+
+    updateSimulation() {
+        // Обновление узлов и рёбер
+        this.forceSimulation.nodes(this.graph.getAllNodes());
+        this.forceSimulation.force("link").links(this.graph.edges);
+        this.forceSimulation.force("link").links(this.graph.edges);
+
+        // Инициализация положений узлов
+        this.graph.getAllNodes().forEach(node => {
+            if (node.fx !== undefined && node.fy !== undefined) {
+                node.x = node.fx;
+                node.y = node.fy;
+            }
+        });
+
+        this.forceSimulation.alpha(1).restart(); // Перезапуск симуляции
+    }
+
 
 }
 
