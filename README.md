@@ -1,5 +1,6 @@
 # Graph-Visualizer
 Библиотека для визуализации ориентированных графов - в разработке - конечно, до опен сурс качества далека, но работает хорошо
+(https://ualiyevvv.github.io/graph-visualizer/)[DEMO]
 ## Usage
 
 `npm install` <br>
